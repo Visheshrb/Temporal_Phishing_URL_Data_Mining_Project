@@ -1,0 +1,13 @@
+- [ ] Log dataset source, access date, terms, snapshot, and file hash.
+- [ ] Verify timestamp meaning and date coverage for every source.
+- [ ] Report loaded, removed, duplicate, missing-date, and per-year/source counts.
+- [ ] Do not equate all malware URLs with phishing.
+- [ ] Treat Tranco as weak lower-risk reference data, not verified benign truth.
+- [ ] Use chronological test splits as the primary evaluation.
+- [ ] Check URL/domain/campaign overlap across periods.
+- [ ] Report precision, recall, F1, PR-AUC, false-positive rate, and confusion counts.
+- [ ] Interpret clusters cautiously; they are not confirmed campaigns.
+- [ ] Compare static and rolling retraining on the same test periods.
+- [ ] Run from a clean environment and document dependencies.
+- [ ] Base report/presentation conclusions on actual outputs only.
+- [ ] Never visit or execute live malicious URLs.

@@ -1,0 +1,1 @@
+Place permitted downloaded CSV/TXT data files here. Suggested names: phishtank.csv, urlhaus.csv, piracema.csv, tranco.csv. See root README for schema notes.
