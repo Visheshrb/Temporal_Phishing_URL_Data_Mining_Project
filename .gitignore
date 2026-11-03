@@ -16,3 +16,5 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+# Uncompressed phishing CSVs (use the .zip archives in git; unzip locally)
+data/raw/phishing/*.csv

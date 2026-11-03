@@ -1,18 +1,10 @@
-Raw dataset layout:
+﻿Raw dataset layout:
 
-  data/raw/phishing/   # one CSV per phishing source (+ data_log.csv)
-  data/raw/benign/     # benign / dual-class sources (Set A/B/C)
+  data/raw/phishing.zip   # full phishing folder archive (unzip into data/raw/)
+  data/raw/phishing/      # local unzipped CSVs (gitignored)
+  data/raw/benign/        # benign / dual-class sources
 
-Phishing files (cleaned):
-  OpenPhish_Wayback_Archive.csv
-  OpenPhish_Live_Feed.csv
-  PhishTank_Historical_Wayback_Snapshots.csv
-  PhishTank_Zenodo_Archive.csv
-  PhishStats_Historical_Wayback_Snapshots.csv
-  Mitchell_Krog_Phishing_Database.csv
-  URLhaus_Wayback_Archive.csv
-  PhishVN_Time_Stamped_Phishing_Dataset.csv
-  data_log.csv
+Unzip example (PowerShell):
+  Expand-Archive data\raw\phishing.zip -DestinationPath data\raw -Force
 
-Do not store intermediate Excel dumps or _downloads here.
-Re-download with: python scripts/build_phishing_csvs.py
+Uncompressed data/raw/phishing/*.csv are meant to stay local / gitignored.
