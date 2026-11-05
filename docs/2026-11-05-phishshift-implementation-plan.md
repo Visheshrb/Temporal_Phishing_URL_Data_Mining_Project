@@ -14,7 +14,7 @@ acceptance checks, and STOP checkpoints. Implement one phase at a time and stop 
 
 Tick items as they are completed. Dates are targets from the project guide.
 
-- [ ] **Phase 0** Scaffold (Nov 5)
+- [x] **Phase 0** Scaffold (Nov 5)
 - [ ] **Phase 1** Data acquisition and verification (Nov 5 to 6)
 - [ ] **Phase 2** Phishing timeline, URL parsing, campaigns (Nov 6 to 10)
 - [ ] **Phase 3** Benign stream, warehouse, shortcut audit (Nov 6 to 11)
@@ -25,15 +25,28 @@ Tick items as they are completed. Dates are targets from the project guide.
 - [ ] **Phase 8** Emerging patterns, RQ3 (Nov 18 to 24)
 - [ ] **Phase 9** Labeling budget, retraining policies, sensitivity, RQ4 (Nov 20 to 25)
 - [ ] **Phase 10** Results freeze and Streamlit demo (Nov 24 to Dec 1)
-- [ ] **Phase 11** Reproducibility pass and cleanup (Dec 4 to 8)
+- [ ] **Phase 11** Presentation (Nov 26 to Dec 3, presentation Thu Dec 3)
+- [ ] **Phase 12** Reproducibility pass and cleanup (Dec 4 to 8)
+- [ ] **Phase 13** Final report and submission (Dec 8 to 11, submission Fri Dec 11)
 
 ## Build log
 
 Add one dated line per work session: `YYYY-MM-DD Phase N: what was done; open issues.`
 
+- 2026-11-05 Phase 0: scaffold, config.yaml, Makefile (Windows + Unix), config/datalog/log modules,
+  7 tests green on Python 3.11.9; requirements pinned to direct dependencies only (full `pip freeze`
+  includes Windows-only packages such as pywinpty); added pyproject.toml for pytest pythonpath and ruff.
+
 ---
 
 ## Shared specifications
+
+### Week arithmetic
+
+`week_key` (ISO yyyyww) is an identifier only: use it for joins, file names, and seed offsets
+(`seed + week_key`), never for arithmetic (202503 - 4 is not a week). Every offset (lags, windows, label
+delays, horizons, "week + 1") is computed on `study_week`, which runs 1, 2, 3, ... without gaps.
+Function arguments that take a week for arithmetic are study weeks.
 
 ### config.yaml (create exactly this in Phase 0)
 
@@ -65,6 +78,7 @@ sampling:
   benign_domains_per_crawl: 2000
   urls_per_domain: 5
   rank_buckets: [1000, 10000, 100000, 1000000]
+  match_path_depth: false    # set true only if the Phase 3 shortcut audit fails
   shared_hosts: [github.io, sites.google.com, weebly.com, blogspot.com, web.app, firebaseapp.com,
                  docs.google.com, dropbox.com, wixsite.com, netlify.app, vercel.app, pages.dev]
 network:
@@ -178,8 +192,9 @@ Create:
 - `requirements.txt` (unpinned first): duckdb, pandas, pyarrow, numpy, scipy, scikit-learn, mlxtend,
   datasketch, tldextract, requests, pyyaml, tqdm, openpyxl, matplotlib, seaborn, streamlit, jupyter,
   nbconvert, pytest, ruff. After a successful install, pin with `pip freeze > requirements.txt`.
-- `Makefile` with targets: setup, test, data, timeline, benign, warehouse, rq1, patterns, radar, inject,
-  explain, policy, freeze, demo, notebooks, all. Targets for later phases may echo "not implemented".
+- `Makefile` with targets: setup, test, data, timeline, benign, warehouse, eda, rq1, patterns, radar,
+  inject, explain, policy, freeze, demo, notebooks, all. Targets for later phases may echo "not implemented".
+  Must work on Windows (GNU make, `.venv/Scripts/python.exe`) and macOS/Linux (`.venv/bin/python`).
 - `src/__init__.py`, `src/config.py`, `src/datalog.py`, `src/log.py`.
 - `tests/conftest.py` with a fixture that loads config.yaml and a `tmp_path`-based fake data root.
 
@@ -234,7 +249,9 @@ Common Crawl request rate (update `network.cc_requests_per_sec`).
 
 **Goal:** a clean weekly phishing table with first-seen dates, components, and campaign locks.
 
-Create `src/url_parser.py`, `src/timeline.py`, `src/campaigns.py`, `scripts/run_timeline.py` (make timeline).
+Create `src/url_parser.py`, `src/timeline.py`, `src/campaigns.py`, `scripts/run_timeline.py` (make timeline),
+`notebooks/primary/01_phishing_timeline.ipynb` (snapshot sizes with the cap-change date, weekly counts,
+campaign size distribution; reads `data/interim/` outputs only, any example URL defanged).
 
 ```python
 # src/url_parser.py
@@ -263,12 +280,12 @@ def weekly_subsample(df: pd.DataFrame, n_per_week: int, seed: int) -> pd.DataFra
 def campaign_groups(urls: pd.Series, shingle: int, threshold: float, num_perm: int, seed: int) -> pd.Series
     # datasketch MinHash on char shingles of the canonical URL + MinHashLSH; connected components -> campaign_key
 def lock_to_earliest(df: pd.DataFrame) -> pd.DataFrame
-    # every member gets the group's earliest first_seen week_key
+    # every member gets the group's earliest first_seen week_key (needs week_key from assign_week)
 ```
 
 Pipeline order in `run_timeline.py`: build_timeline, canonicalize (log drops), exact dedupe on canonical
-(keep earliest first_seen, max last_seen, sum n_snapshots), componentize, campaign_groups, lock_to_earliest,
-assign_week, filter to study window, weekly_subsample. Write `data/interim/openphish_timeline.parquet`,
+(keep earliest first_seen, max last_seen, sum n_snapshots), componentize, assign_week (from first_seen),
+campaign_groups, lock_to_earliest, filter to study window (on the locked week_key), weekly_subsample. Write `data/interim/openphish_timeline.parquet`,
 `data/interim/snapshot_sizes.csv`. Repeat for Phishing.Database with the approach chosen at checkpoint 1
 (write `phishdb_timeline.parquet`).
 
@@ -346,8 +363,8 @@ the overlap rule, audit ROC-AUC (and whether matching was needed).
 
 **Goal:** the decay curve with confidence bands. This is the project gate (Fri Nov 13).
 
-Create `src/features.py`, `src/models.py`, `src/metrics.py`, `scripts/run_eda.py`, `scripts/run_rq1.py`
-(make rq1), notebooks 03 and 04.
+Create `src/features.py`, `src/models.py`, `src/metrics.py`, `scripts/run_eda.py` (make eda),
+`scripts/run_rq1.py` (make rq1), notebooks 03 and 04.
 
 ```python
 # src/features.py
@@ -506,7 +523,7 @@ Create `src/inject.py`, `scripts/run_inject.py` (make inject), notebooks 07 and 
 def global_families(phish: pd.DataFrame, cfg: dict, seed: int) -> pd.Series     # k-means k=global_k; writes dim_campaign.family_id
 def pick_families(fam: pd.Series, weeks: pd.Series, n: int, min_size: int, seed: int) -> list[int]
     # families with >= min_size URLs present both in weeks 1 to 8 and later
-def quiet_onset(composite: pd.Series, duration: int) -> int     # first test week starting `duration` weeks without alarms
+def quiet_onset(composite: pd.Series, duration: int) -> int     # first test study_week starting `duration` weeks without alarms
 def inject(stream: pd.DataFrame, donors: pd.DataFrame, rate: float, seed: int) -> pd.DataFrame
     # replace `rate` of the phishing rows with donor rows (without replacement across weeks); adds is_injected
 def inject_benign(stream, donors_benign, rate, seed) -> pd.DataFrame      # benign-only control (HF benign donors)
@@ -553,8 +570,10 @@ def select(candidates: pd.DataFrame, strategy: str, budget: int, model: TrainedM
     # random | uncertainty (|score - 0.5| smallest) | novelty (highest per-URL S3) |
     # pattern (matches a top-k emerging pattern, then random among matches) | mixed (half novelty, half pattern)
 def labeled_window(con, end_week: int, n_weeks: int, delay: int) -> pd.DataFrame
-    # weeks (end_week - delay - n_weeks + 1) .. (end_week - delay), labels available
+    # end_week is a study_week; study weeks (end_week - delay - n_weeks + 1) .. (end_week - delay),
+    # labels available
 def budget_experiment(alarm_week: int, cfg: dict, seed: int) -> pd.DataFrame
+    # alarm_week is a study_week; output keeps alarm_week_key for joins
     # candidates = streams of alarm_week-1 and alarm_week; retrain on labeled_window + selected labels;
     # evaluate weeks alarm+1..alarm+4 (exclude_seen); no_retrain = static model; oracle = retrain with all
     # labels up to alarm_week; recall_recovered = (R_policy - R_no) / (R_oracle - R_no) (nan if denominator <= 0)
@@ -590,7 +609,23 @@ After this checkpoint, analysis changes go only to notebooks/secondary/.
 
 ---
 
-## Phase 11: Reproducibility pass and cleanup
+## Phase 11: Presentation
+
+**Goal:** material for the Thu Dec 3 presentation, built only from frozen results.
+
+- `reports/paper/slides_outline.md`: one entry per slide (title, key message, figure from
+  `reports/figures/`, source table), covering the thesis, data, RQ1 to RQ4, the demo, and limitations.
+  `presentation/SLIDE_OUTLINE.md` (from the earlier project) may guide the structure only; its content
+  does not apply.
+- `reports/paper/numbers.md`: every number quoted on a slide, with its result table, query, and the
+  freeze commit hash. No number may appear on a slide without a row here.
+- Any URL on a slide is defanged. Humans build the deck itself; Claude does not invent results.
+
+**STOP checkpoint 11:** the outline, the figure list, and the numbers table for human review.
+
+---
+
+## Phase 12: Reproducibility pass and cleanup
 
 - `make all` from `data/raw/` reproduces every result table; record total runtime in the README.
 - `make notebooks` executes all primary notebooks without errors.
@@ -600,4 +635,21 @@ After this checkpoint, analysis changes go only to notebooks/secondary/.
   dropped.
 - `ruff check` clean; `make test` green.
 
-**STOP checkpoint 11:** runtime, test count, and anything that could not be reproduced.
+**STOP checkpoint 12:** runtime, test count, and anything that could not be reproduced.
+
+---
+
+## Phase 13: Final report and submission
+
+**Goal:** the written report for Fri Dec 11, consistent with the frozen results and the reproduced run.
+
+- `reports/paper/report.md`: abstract, introduction and RQ1 to RQ4, data sources (access dates, sha256
+  from `data_log.csv`, terms, limitations), methods with the leakage controls from CLAUDE.md, results per
+  RQ (including negative results, such as a signal that does not beat the baselines), discussion,
+  limitations and ethics, references. `report/FINAL_REPORT_TEMPLATE.md` and
+  `report/SUBMISSION_CHECKLIST.md` (from the earlier project) may guide the structure only.
+- Every number comes from `reports/paper/numbers.md` (extend it as needed); every figure from
+  `reports/figures/MANIFEST.md`.
+- Check the submission against the course requirements (humans provide them) and list what is included.
+
+**STOP checkpoint 13:** report draft and submission checklist for human review. Humans submit.

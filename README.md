@@ -3,7 +3,7 @@
 CSCI 6443 (Data Mining, GWU) final project: using only unlabeled traffic, detect when a phishing URL
 classifier is going stale, what changed, and which few URLs to label to fix it.
 
-This project is being built from the implementation plan, and this README will be completed in Phase 11.
+This project is being built from the implementation plan, and this README will be completed in Phase 12.
 
 - Project rules: [CLAUDE.md](CLAUDE.md)
 - Build plan and progress: [docs/2026-11-05-phishshift-implementation-plan.md](docs/2026-11-05-phishshift-implementation-plan.md)

@@ -42,7 +42,7 @@ Deadlines: results freeze Wed Nov 25, presentation Thu Dec 3, submission Fri Dec
 
 ### Files
 - `data/raw/` is immutable. Never modify or delete anything in it. Every downloaded file is logged in
-  `data/raw/data_log.csv` (source_url, utc, sha256, rows) via `src/datalog.py`.
+  `data/raw/data_log.csv` (file_name, source_url, utc_iso, sha256, bytes, rows) via `src/datalog.py`.
 - Ask before deleting or overwriting any existing file outside `data/interim/`, `data/processed/`, and
   `reports/`.
 
@@ -72,7 +72,7 @@ Deadlines: results freeze Wed Nov 25, presentation Thu Dec 3, submission Fri Dec
 PhishShift/
   CLAUDE.md                 this file
   config.yaml               every parameter
-  Makefile                  make setup|data|timeline|benign|warehouse|rq1|patterns|radar|inject|explain|policy|freeze|demo|test|notebooks
+  Makefile                  make setup|data|timeline|benign|warehouse|eda|rq1|patterns|radar|inject|explain|policy|freeze|demo|test|notebooks|all
   requirements.txt          pinned after first install (pip freeze)
   docs/                     implementation plan, design notes
   src/                      config, datalog, url_parser, timeline, campaigns, benign, warehouse,

@@ -1,0 +1,84 @@
+seed: 42
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  results: data/processed/results
+  duckdb: data/processed/phishshift.duckdb
+  figures: reports/figures
+  demo: reports/demo
+sources:
+  openphish_repo: https://github.com/openphish/public_feed.git
+  openphish_file: feed.txt
+  phishdb_repo: https://github.com/Phishing-Database/Phishing.Database.git
+  cc_collinfo: https://index.commoncrawl.org/collinfo.json
+  tranco_date_api: https://tranco-list.eu/api/lists/date/{yyyymmdd}
+  hf_benign_csv: https://huggingface.co/datasets/Mitake/PhishingURLsANDBenignURLs/resolve/main/PhishBenignDataset.csv
+  uci_zip: https://archive.ics.uci.edu/static/public/967/phiusiil+phishing+url+dataset.zip
+study:
+  start: 2024-10-14          # first Monday after the feed starts
+  end: 2026-11-01
+  label_delay_weeks: 4
+sampling:
+  phish_per_week: 1500
+  benign_ratio: 5
+  benign_domains_per_crawl: 2000
+  urls_per_domain: 5
+  rank_buckets: [1000, 10000, 100000, 1000000]
+  match_path_depth: false    # set true only if the Phase 3 shortcut audit fails
+  shared_hosts: [github.io, sites.google.com, weebly.com, blogspot.com, web.app, firebaseapp.com,
+                 docs.google.com, dropbox.com, wixsite.com, netlify.app, vercel.app, pages.dev]
+network:
+  cc_requests_per_sec: 1.0
+  max_retries: 5
+  backoff_base_sec: 2.0
+  timeout_sec: 60
+campaigns: {shingle: 4, jaccard: 0.85, num_perm: 128}
+features:
+  char_ngrams: [3, 5]
+  char_min_df: 5
+  char_max_features: 300000
+  token_min_df: 20
+  hash_features: 1048576
+  svd_components: 100        # HGB only, refit on each training window
+  url_stopwords: [http, https, www, html, htm, php, index, com]
+  sensitive_keywords: [login, verify, update, secure, account, banking, confirm]
+model:
+  anchor_train_weeks: 8
+  val_fraction: 0.2
+  fpr: 0.01
+  logreg: {C: 1.0, max_iter: 2000, class_weight: balanced}
+  hgb: {max_iter: 300, learning_rate: 0.1}
+  prevalence: ["1:10", "1:100", "1:1000"]
+  bootstrap_n: 500
+patterns: {block_weeks: 4, min_support: 0.005, max_len: 4, strong_conf: 0.80, strong_g2: 50}
+families: {k_grid: [5, 8, 10, 12, 15], link_threshold: 0.80, ari_bootstrap: 50, silhouette_sample: 5000}
+radar:
+  ngram_n: 4
+  ref_centroids_k: 20
+  uncertainty_band: [0.3, 0.7]
+  psi_bins: 10
+  psi_top_features: 10
+  tau: 2.0
+  tau_grid: [1.5, 2.0, 2.5, 3.0]
+  lead_max_lag: 4
+  perm_block: 4
+  n_perm: 1000
+explain: {window_weeks: 4, min_support: 0.005, min_growth: 5, top_k: 10}
+inject:
+  global_k: 15
+  n_families: 10
+  min_family_size: 500
+  rates: [0.05, 0.10, 0.20, 0.40]
+  duration_weeks: 8
+  horizon_weeks: 4
+policy:
+  budgets: [50, 100, 200, 500]
+  candidate_weeks: 2
+  eval_weeks: 4
+  seeds: [0, 1, 2, 3, 4]
+  strategies: [random, uncertainty, novelty, pattern, mixed]
+  radar_policy_strategy: novelty
+  radar_policy_budget: 200
+sensitivity:
+  label_delay_weeks: [2, 8]
